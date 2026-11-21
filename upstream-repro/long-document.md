@@ -1,34 +1,114 @@
-# 42 页 PDF 上传成功后，提问返回 HTTP 400
+# 大 PDF 上传成功，发送消息时返回 32k 错误
 
-在 chat-demo v0.1.3 中，Files 成功接收测试 PDF，随后 Messages 报输入超过 32,768 tokens。同一组消息和文件引用，去掉本次请求的扩展选项后可以完成回答。候选改动仅在收到对应长度错误时自动重试一次。[代码差异](https://github.com/YinkaiYu/chat-demo/compare/8ad7b56...7f28377)
+## 问题
 
-**需要评估的取舍**：重试当轮采用 API 默认内容检查，无法联网搜索或阅读链接。下一轮重新尝试常规配置。要求每轮都做高等级输入和输出检查的部署，需要单独评估这种恢复方式。[DeepSeek 内容安全说明](https://api-docs.deepseek.com/guides/safety/)
+一份 42 页 PDF 能正常上传，但发送消息时，Messages API 返回 HTTP 400，提示输入超过 32,768 tokens，用户看不到回答。
 
-## 复现一次首问
+原因是请求里带了 `safety_check`、`title` 或 `tools` 这些扩展字段；只要带其中任意一个，单次输入就会被限制在 32,768 tokens。
 
-1. 按[运行说明](./README.md)打开发布版，新建会话，在设置中配置可调用官方 Files 和 Messages 的 API Key。使用默认模型 `deepseek-flash` 与原版默认设置。打开浏览器网络面板，开启「保留日志」。
-2. 上传 [42 页合成 PDF](./fixtures/dsh-dense-probe.pdf)，等附件就绪。发送「查阅附件最后一页。只输出印刷第 042 页 Page marker 后面的九位数字。」
-3. 在原版的一次实测中，`POST /anthropic/v1/files` 返回 200，`POST /anthropic/v1/messages` 返回 400，提示 `user input too long, 63941 tokens exceeds max 32768 tokens`。不同上传的 token 数会变化。若原请求直接返回 200，请记录配置与响应；该次没有触发长度重试。[原版记录](./evidence/long-original.json)
-4. 在修复版新会话重复步骤。触发错误时，核对下表中的请求顺序。文件只上传一次，回答应完整显示，刷新后可以重开会话。该题的校验码为 `119932668`。[修复版记录](./evidence/long-success.json) · [逐页真值](./fixtures/page-markers.json)
+修复只在收到这条特定长度错误、且还没有输出内容时，去掉这些字段，用同一组消息和附件引用重试一次。标题另外用短请求生成。
 
-| 修复版同一次会话 | HTTP | 可核对的内容 |
-|---|---|---|
-| 上传 PDF | 200 | 取得附件引用 |
-| 提交原始提问 | 400 | 该次计为 63,947 tokens，最大值为 32,768 |
-| 自动重试 | 200 | `messagesHash`、`referenceHashes`、`sharedBodyHash` 一致；省略 `tools`、`title`、`safety_check`；流完成，回答已保存 |
-| 尚需自动标题 | 200 | 后台短请求带提问、回答节选及附件名，不含文件引用；标题写入会话 |
-| 刷新后追问 | 200 | 使用原附件引用；本次直接以常规配置完成 |
+## 用户会看到什么
 
-## 触发条件与对照
+- 附件上传过程正常，PDF 能出现在输入框里；
+- 点击发送后，界面提示输入过长或请求失败；
+- 刷新后消息没有回答，文件本身没有丢失。
 
-发送前没有收到内容块、Messages 返回 HTTP 400、且错误符合 `user input too long, <数字> tokens exceeds max 32768 tokens` 时，候选版才使用普通请求重试一次。这个判定适用于各轮。常规请求按设置声明网页工具，自动标题按需启用。标题失败不会撤回已保存的回答。
+## 最小复现
 
-![测试 PDF 触发长度重试后的请求顺序](./assets/long-document-flow.svg)
+准备：
 
-在另一组单变量实验中，同一附件、同一问题的基础请求返回 200。分别只加回高等级检查、启用标题、声明阅读链接工具或联网搜索工具，四次均报 48,726 tokens 超出 32,768。这里描述的是这些具体设置的观测结果。普通短问在最终构建上只发送一次。[五次对照](./evidence/single-option-controls.json) · [短问记录](./evidence/short-control.json)
+- chat-demo v0.1.3 的构建产物
+- 本目录的 [`fixtures/dsh-dense-probe.pdf`](./fixtures/dsh-dense-probe.pdf)（42 页）
+- 可用的 API Key
+- 浏览器网络面板，建议开启“保留日志”
 
-## 文档读取与验证环境
+步骤：
 
-两次完成上传的最终构建测试均答对第 042 页。刷新后追问第 014 页，一次得到正确值 `521154191`，另一次回答该页缺失；两次追问都引用各自会话里的同一文件。另有一次上传阶段返回 502，尚未发送 Messages。请求重试可由网络记录和会话落盘验证，客户端日志不能区分服务端解析与模型作答对漏页的影响。[第 014 页未命中](./evidence/long-page14-miss.json) · [上传 502](./evidence/long-upload-502.json)
+1. 新建会话，上传 `dsh-dense-probe.pdf`，等附件就绪。
+2. 发送：
 
-真实接口对照使用 Edge，由本机 DSH 账户提供鉴权，保留官方 Files、Messages 路径和请求体。公开分支沿用 demo 自带的 API Key 入口。公开记录为脱敏字段和摘要。实测运行时代码来自 `4357c0d`；到 `7f28377` 的后续两次提交仅改中英文 README。[提交差异](https://github.com/YinkaiYu/chat-demo/compare/4357c0d...7f28377)
+   ```text
+   只输出附件原始印刷第 042 页的九位 Page marker。
+   ```
+
+3. 在原版中观察请求：
+
+   ```text
+   POST /anthropic/v1/files      200
+   POST /anthropic/v1/messages   400
+
+   user input too long, 63941 tokens exceeds max 32768 tokens
+   ```
+
+4. 在修复版中用新会话重复同样操作，确认第二次请求返回 200 并显示回答。
+
+第 042 页的正确 Page marker 是 `119932668`，逐页真值在 [`fixtures/page-markers.json`](./fixtures/page-markers.json)。
+
+## 为什么会被限制
+
+chat-demo v0.1.3 的普通聊天请求默认附带三个扩展字段：
+
+| 字段 | 作用 |
+|---|---|
+| `safety_check` | 高等级内容检查 |
+| `title` | 根据本轮内容自动生成标题 |
+| `tools` | 联网搜索、读取链接 |
+
+带其中任意一个字段时，Messages API 的单次输入上限是 32,768 tokens；不带这些字段时，同一组消息可以通过。
+
+## 修复后的流程
+
+![大 PDF 触发 32k 错误后的请求流程](./assets/long-document-flow.svg)
+
+具体规则：
+
+1. 首次请求仍然按原样发送，包括三个扩展字段。
+2. 只有同时满足以下条件才重试：
+   - 返回 HTTP 400；
+   - 错误包含 `max 32768 tokens`；
+   - 还没有收到任何输出内容。
+3. 重试使用相同的消息和同一个附件引用，只去掉 `safety_check`、`title`、`tools`；模型和思考设置不变，附件不重新上传。
+4. 回答成功后，如果会话还没有标题，再用“提问节选 + 回答节选 + 附件名”发一个短请求生成标题。
+
+普通短消息、其他错误、已经输出内容的请求都不会进入重试。
+
+## 验证结果
+
+| 检查项 | 结果 |
+|---|---|
+| 上传 42 页 PDF | Files API 200 |
+| 原版发送消息 | 400，提示 `63941 tokens exceeds max 32768 tokens` |
+| 修复版首次请求 | 400，触发重试 |
+| 修复版重试 | 200，回答正常显示并保存 |
+| 第 042 页 Page marker | `119932668` |
+| 刷新后第 014 页 Page marker | 一次正确：`521154191` |
+| 普通短消息 | 只发送 1 次请求 |
+| 会话标题 | 由单独的短请求生成并保存 |
+
+补充对照：同一附件、同一问题，基础请求返回 200；分别只加回高等级检查、自动标题、读取链接或联网搜索，四次都返回 400（48,726 tokens）。这说明限制由这些扩展字段触发，而不是 PDF 文件本身太大。
+
+## 取舍
+
+重试那一次使用 API 默认的内容检查，不启用联网搜索、链接阅读和高等级安全检查；后续消息恢复常规配置。
+
+如果项目要求每次请求都保留高等级安全检查，这个自动重试可能需要调整，或者让用户显式选择。这个取舍不影响 Chromium 109 兼容修复，两项可以分开处理。
+
+## 验证范围
+
+- 两次完成上传的测试都答对了第 042 页。
+- 刷新后追问第 014 页，一次得到正确值，另一次回答该页缺失；两次都引用同一会话里的同一个文件。PDF 页面解析由服务端完成，这不在重试逻辑的控制范围内。
+- 另有一次上传阶段返回 502，那次没有发送 Messages 请求。
+
+## 请求记录
+
+- [原版 400 记录](./evidence/long-original.json)
+- [修复版成功记录](./evidence/long-success.json)
+- [四次单字段对照](./evidence/single-option-controls.json)
+- [普通短消息记录](./evidence/short-control.json)
+- [第 014 页未命中记录](./evidence/long-page14-miss.json)
+- [上传 502 记录](./evidence/long-upload-502.json)
+
+## 修复分支
+
+https://github.com/YinkaiYu/chat-demo/compare/8ad7b56...7f28377
