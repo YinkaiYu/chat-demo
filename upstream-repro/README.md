@@ -7,7 +7,7 @@
 ## 报告
 
 1. [Chromium 109：有效备份无法导入，发送消息提示上传失败](./legacy-browser.md)
-2. [大 PDF：发送第一条消息时被 32k 限制拒绝](./long-document.md)
+2. [大 PDF：发送消息时被 32k 限制拒绝](./long-document.md)
 
 ## 代码分支
 
