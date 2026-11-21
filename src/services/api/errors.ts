@@ -75,6 +75,13 @@ export const getFileErrorCode = (error: unknown): FileErrorCode | null => {
   return FILE_ERROR_PATTERNS.find(([, pattern]) => pattern.test(error.message))?.[0] ?? null
 }
 
+/** Messages 在开始生成前拒绝了超过扩展模式单次输入上限的请求。 */
+export const isExtendedInputLimit = (error: unknown): boolean =>
+  error instanceof ApiError &&
+  error.kind === 'http' &&
+  error.status === 400 &&
+  /\buser input too long,\s*\d+ tokens exceeds max 32768 tokens\b/i.test(error.message)
+
 /** 从报错文案里取出服务端 file_id，用于只重置真正失效的附件 */
 export const extractFileIds = (message: string): string[] => [
   ...new Set(message.match(/file-api-[\w-]+/g) ?? []),

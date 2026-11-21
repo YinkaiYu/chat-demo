@@ -2,7 +2,12 @@ import { create } from 'zustand'
 import { createId } from '../../utils/id.js'
 import { ApiError, streamMessage } from '../api/client.js'
 import type { ChatModel, CreateMessageRequest } from '../api/types.js'
-import { extractFileIds, getFileErrorCode, isRetryableApiError } from '../api/errors.js'
+import {
+  extractFileIds,
+  getFileErrorCode,
+  isExtendedInputLimit,
+  isRetryableApiError,
+} from '../api/errors.js'
 import {
   cancelUpload,
   checkImageFileIds,
@@ -25,6 +30,7 @@ import {
   applyEvent,
   canContinueReply,
   getContextRounds,
+  getReplyText,
   settleReply,
   toRequestMessages,
 } from './reply.js'
@@ -44,7 +50,7 @@ const MODEL: ChatModel = 'deepseek-flash'
 const SYSTEM_PROMPT = '该助手为DeepSeek，由深度求索公司创造。'
 /** 保留最近打开的详情；当前会话、生成中及尚未成功保存的会话不淘汰。 */
 const SESSION_CACHE_LIMIT = 5
-/** 安全审核固定开启，所有请求都走扩展模式 */
+/** 默认请求使用扩展模式的高等级安全审核。 */
 const SAFETY_CHECK = { level: 'high' } as const
 /** 服务端判定 file_id 失效后，重新补传并重发的最多次数（不含首次请求） */
 const FILE_RETRY_LIMIT = 2
@@ -64,6 +70,8 @@ const serverTools = (search: boolean): CreateMessageRequest['tools'] => {
 
 /** 允许自动补标题的请求；手动重命名后取消本轮标题写入，包含主动清空标题的情况。 */
 const titleRequests = new Set<AbortController>()
+/** 普通模式回复完成后独立补标题，允许用户在等待标题时继续聊天。 */
+const backgroundTitles = new Map<string, AbortController>()
 
 type ChatState = {
   ready: boolean
@@ -401,6 +409,9 @@ export const replaceHistory = async (write: () => Promise<void>): Promise<number
   }
   set({ importingHistory: true })
   try {
+    for (const controller of backgroundTitles.values()) {
+      controller.abort()
+    }
     for (const controller of Object.values(get().streaming)) {
       controller.abort()
     }
@@ -466,6 +477,7 @@ export const renameSession = (id: string, title: string) => {
   if (get().importingHistory || deletingSessions.has(id)) {
     return
   }
+  backgroundTitles.get(id)?.abort()
   const controller = getStreamController(id)
   if (controller) {
     titleRequests.delete(controller)
@@ -500,6 +512,7 @@ const removeSessionData = async (id: string): Promise<boolean> => {
   const epoch = historyEpoch
   deletingSessions.add(id)
   try {
+    backgroundTitles.get(id)?.abort()
     getStreamController(id)?.abort()
     // 等本会话的流收尾，避免删除之后又被收尾保存写回来。
     await waitForIdle(id)
@@ -827,12 +840,16 @@ const refreshRequest = (sessionId: string, request: Request): Request => {
  * - 历史轮次（仅进入上下文的）中没有 serverId 的附件，多为导入的图片：从最新的消息往前逐张补传，
  *   失败静默跳过，该附件不进入本次请求，下次发送时再试。
  */
-const prepareFiles = async (sessionId: string, request: Request, signal: AbortSignal) => {
+const prepareFiles = async (
+  sessionId: string,
+  request: Request,
+  apiKey: string,
+  signal: AbortSignal
+) => {
   const epoch = historyEpoch
   // 服务端判定 file_id 失效时会清掉会话里的 serverId，先用最新消息替换请求快照，
   // 否则快照里仍是旧 id，补传会直接复用它。
   request = refreshRequest(sessionId, request)
-  const apiKey = useSettings.getState().apiKey ?? ''
   const serverIds = new Map<string, string>()
   // 停止生成立即生效；上传本身不取消（输入框与其他消息可能共用同一任务），完成后照常写回 serverId
   const aborted = new Promise<never>((_, reject) => {
@@ -978,6 +995,64 @@ const waitForRetry = (attempt: number, signal: AbortSignal) =>
     signal.addEventListener('abort', onAbort, { once: true })
   })
 
+/** 用短摘要触发原有的自动标题协议，避免在标题请求里再次发送长文档。 */
+const requestFallbackTitle = async (
+  sessionId: string,
+  apiKey: string,
+  question: UserMessage,
+  reply: AssistantMessage
+) => {
+  const prompt = [
+    question.content.trim().slice(0, 1000),
+    question.files
+      .map((file) => file.name)
+      .join('\n')
+      .slice(0, 1000),
+  ]
+    .filter(Boolean)
+    .join('\n')
+  if (!prompt) {
+    return
+  }
+  const controller = new AbortController()
+  backgroundTitles.set(sessionId, controller)
+  const messages: CreateMessageRequest['messages'] = [{ role: 'user', content: prompt }]
+  const answer = getReplyText(reply).trim().slice(0, 1000)
+  if (answer) {
+    messages.push({ role: 'assistant', content: [{ type: 'text', text: answer }] })
+  }
+  try {
+    const events = streamMessage(
+      apiKey,
+      {
+        model: reply.model ?? MODEL,
+        system: SYSTEM_PROMPT,
+        messages,
+        thinking: { type: 'disabled' },
+        safety_check: SAFETY_CHECK,
+        title: { enabled: true },
+      },
+      controller.signal
+    )
+    for await (const event of events) {
+      if (
+        event.type === 'message_delta' &&
+        (event.delta.stop_reason === 'end_turn' || event.delta.stop_reason === 'max_tokens') &&
+        event.delta.title?.trim() &&
+        !controller.signal.aborted &&
+        get().sessions.find((session) => session.id === sessionId)?.title === ''
+      ) {
+        renameSession(sessionId, event.delta.title.trim())
+        return
+      }
+    }
+  } catch {
+    // 标题失败不改变已保存的回复。
+  } finally {
+    backgroundTitles.delete(sessionId)
+  }
+}
+
 /**
  * 请求并消费流：先补齐附件的 serverId，再发请求；流式增量按动画帧刷新内存，完成、失败或停止后落盘。
  * 补传失败时回复记为 upload 错误，可重试。
@@ -985,7 +1060,8 @@ const waitForRetry = (attempt: number, signal: AbortSignal) =>
  */
 const streamReply = async (sessionId: string, initial: AssistantMessage, request: Request) => {
   const controller = new AbortController()
-  if (!getSession(sessionId)?.title) {
+  const apiKey = useSettings.getState().apiKey ?? ''
+  if (!getSession(sessionId)?.title && !backgroundTitles.has(sessionId)) {
     titleRequests.add(controller)
   }
   set((state) => ({ streaming: { ...state.streaming, [sessionId]: controller } }))
@@ -997,40 +1073,49 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
     updateReply(sessionId, reply)
   }
   streamFlushes.set(sessionId, flush)
+  let body: CreateMessageRequest | undefined
+  let plain = false
+  let fileRetries = 0
 
   try {
-    for (let attempt = 0; ; attempt += 1) {
+    for (;;) {
       /** 附件补齐前出错属于上传失败，请求还没有发出 */
-      let preparing = true
+      let preparing = !body
       let receivedContent = false
       try {
-        const prepared = await prepareFiles(sessionId, request, controller.signal)
-        preparing = false
-        // 附件就绪后获取本轮信息；续写沿用原回答快照，重新生成的快照独立保存。
-        const latestReminder = prepared.prefix
-          ? prepared.prefix.latestReminder
-          : createLatestReminder(useSettings.getState())
-        reply = { ...reply, latestReminder }
-        updateReply(sessionId, reply)
-        persist(sessionId)
-        const messages = toRequestMessages(
-          prepared.history,
-          prepared.question,
-          prepared.prefix,
-          initial.thinking ?? false,
-          latestReminder
-        )
-        const events = streamMessage(
-          useSettings.getState().apiKey ?? '',
-          {
+        if (!body) {
+          const prepared = await prepareFiles(sessionId, request, apiKey, controller.signal)
+          preparing = false
+          // 附件就绪后获取本轮信息；续写沿用原回答快照，重新生成的快照独立保存。
+          const latestReminder = prepared.prefix
+            ? prepared.prefix.latestReminder
+            : createLatestReminder(useSettings.getState())
+          reply = { ...reply, latestReminder }
+          updateReply(sessionId, reply)
+          persist(sessionId)
+          body = {
             model: initial.model ?? MODEL,
             system: SYSTEM_PROMPT,
-            messages,
+            messages: toRequestMessages(
+              prepared.history,
+              prepared.question,
+              prepared.prefix,
+              initial.thinking ?? false,
+              latestReminder
+            ),
             thinking: { type: initial.thinking ? 'enabled' : 'disabled' },
-            safety_check: SAFETY_CHECK,
-            tools: serverTools(initial.search ?? false),
-            ...(titleRequests.has(controller) ? { title: { enabled: true } } : {}),
-          },
+          }
+        }
+        const events = streamMessage(
+          apiKey,
+          plain
+            ? body
+            : {
+                ...body,
+                safety_check: SAFETY_CHECK,
+                tools: serverTools(initial.search ?? false),
+                ...(titleRequests.has(controller) ? { title: { enabled: true } } : {}),
+              },
           controller.signal
         )
         const blockIndexes = new Map<number, number>()
@@ -1071,13 +1156,19 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           })
           break
         }
+        // 同一批消息和 file_id 在普通模式重发一次，不消耗补传次数。
+        if (!plain && !receivedContent && isExtendedInputLimit(error)) {
+          plain = true
+          continue
+        }
         // 附件失效：重新补传后重发。收到过内容块（含丢弃的客户端工具）后不自动重发。
         if (
-          attempt < FILE_RETRY_LIMIT &&
+          fileRetries < FILE_RETRY_LIMIT &&
           !receivedContent &&
           reuploadInvalidatedFiles(sessionId, request, error)
         ) {
-          await waitForRetry(attempt, controller.signal)
+          body = undefined
+          await waitForRetry(fileRetries++, controller.signal)
           if (controller.signal.aborted) {
             reply = settleReply(reply, 'stopped', Date.now())
             break
@@ -1104,7 +1195,16 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
       }
     }
   } finally {
-    titleRequests.delete(controller)
+    const needsTitle = titleRequests.delete(controller)
+    if (
+      plain &&
+      needsTitle &&
+      reply.status === 'done' &&
+      !controller.signal.aborted &&
+      (reply.stopReason === 'end_turn' || reply.stopReason === 'max_tokens')
+    ) {
+      void requestFallbackTitle(sessionId, apiKey, request.question, reply)
+    }
     streamFlushes.delete(sessionId)
     cancelAnimationFrame(frame)
     updateReply(sessionId, reply)
