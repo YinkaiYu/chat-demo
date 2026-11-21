@@ -1,0 +1,67 @@
+{
+  "releaseSHA256": "5e8d69c2029bc8b544de03681da196612539da91ccd11ee4958cecaed02d64d3",
+  "fixtureBytes": 1388,
+  "cases": {
+    "original109": {
+      "engine": "109.0.5414.46",
+      "toSorted": "undefined",
+      "pageMessage": "文件导入失败，可能是文件格式错误或使用了旧版的对话导出 ZIP 文件，请前往 DeepSeek 重新导出历史对话文件后再次导入。",
+      "afterReload": [],
+      "runtimeEdits": []
+    },
+    "oneChange109": {
+      "engine": "109.0.5414.46",
+      "toSorted": "undefined",
+      "pageMessage": "已导入 1 个对话",
+      "afterReload": [
+        {
+          "title": "Synthetic upgrade check",
+          "root": "1",
+          "links": [
+            [
+              "user",
+              "1",
+              null,
+              "2"
+            ],
+            [
+              "assistant",
+              "2",
+              "1",
+              null
+            ]
+          ]
+        }
+      ],
+      "runtimeEdits": [
+        "static/js/async/925.548cc1b9.js"
+      ]
+    },
+    "originalEdge": {
+      "engine": "157.0.4341.60",
+      "toSorted": "function",
+      "pageMessage": "已导入 1 个对话",
+      "afterReload": [
+        {
+          "title": "Synthetic upgrade check",
+          "root": "1",
+          "links": [
+            [
+              "user",
+              "1",
+              null,
+              "2"
+            ],
+            [
+              "assistant",
+              "2",
+              "1",
+              null
+            ]
+          ]
+        }
+      ],
+      "runtimeEdits": []
+    }
+  }
+}

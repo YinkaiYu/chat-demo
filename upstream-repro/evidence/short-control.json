@@ -1,0 +1,73 @@
+{
+  "build": "candidate",
+  "asset": "main.3f77b4eb.js",
+  "assetSHA256": "2300db6b624052e2433858eee494392c494bf072e3ecb712105d63978b3c9f50",
+  "pdfSHA256": "0b9bc9ef86cc212244adb000343e983f5b83e3f669fe6c6178e98485f570cc68",
+  "filesRoute": "/anthropic/v1/files",
+  "messagesRoute": "/anthropic/v1/messages",
+  "results": [
+    {
+      "case": "short",
+      "events": [
+        {
+          "stage": "first",
+          "endpoint": "messages",
+          "status": 200,
+          "fields": [
+            "messages",
+            "model",
+            "safety_check",
+            "stream",
+            "system",
+            "thinking",
+            "title",
+            "tools"
+          ],
+          "roles": [
+            "latest_reminder",
+            "user"
+          ],
+          "messagesHash": "e2f4a9f428b46a5efb389daddff075bef27feae46295b661d82baca793967b9c",
+          "referenceHashes": [],
+          "sharedBodyHash": "b707686acaa6307615c002aac9147ec2fcbfcfb3f3664f619b121ff4a72d6317",
+          "title": {
+            "enabled": true
+          },
+          "safety": {
+            "level": "high"
+          },
+          "toolCount": 1
+        }
+      ],
+      "assets": [
+        "main.3f77b4eb.js"
+      ],
+      "answer": "N741",
+      "saved": {
+        "titles": [
+          "回归测试输出N741"
+        ],
+        "summaries": [
+          "回归测试输出N741"
+        ],
+        "messages": [
+          2
+        ]
+      },
+      "reopenedAnswer": "N741",
+      "reopened": {
+        "titles": [
+          "回归测试输出N741"
+        ],
+        "summaries": [
+          "回归测试输出N741"
+        ],
+        "messages": [
+          2
+        ]
+      },
+      "titleVisibleAfterReload": true,
+      "passed": true
+    }
+  ]
+}

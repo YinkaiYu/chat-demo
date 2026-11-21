@@ -1,0 +1,27 @@
+[
+  {
+    "profile": "plain",
+    "status": 200,
+    "message": ""
+  },
+  {
+    "profile": "plain-review",
+    "status": 400,
+    "message": "user input too long, 48726 tokens exceeds max 32768 tokens"
+  },
+  {
+    "profile": "plain-title",
+    "status": 400,
+    "message": "user input too long, 48726 tokens exceeds max 32768 tokens"
+  },
+  {
+    "profile": "plain-read",
+    "status": 400,
+    "message": "user input too long, 48726 tokens exceeds max 32768 tokens"
+  },
+  {
+    "profile": "plain-search",
+    "status": 400,
+    "message": "user input too long, 48726 tokens exceeds max 32768 tokens"
+  }
+]

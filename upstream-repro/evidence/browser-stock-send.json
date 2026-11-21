@@ -1,0 +1,39 @@
+{
+  "browser": "109.0.5414.46",
+  "releaseMainSha256": "c4c9fb2a55c452bb4b31780df5c2d565c2583312b39a2876ea171755ed112855",
+  "cases": [
+    {
+      "edit": null,
+      "messagesRequests": [],
+      "nativeToReversed": "undefined",
+      "state": {
+        "status": "error",
+        "error": {
+          "kind": "upload",
+          "message": "",
+          "localMessage": {
+            "key": "uploadFileStatusFailed"
+          },
+          "retryable": true
+        },
+        "blocks": []
+      },
+      "visibleText": "API 使用 demo\n开启新对话\n今天\n新对话\n设置\n新对话\nSynthetic test.\n上传失败\n深度思考\n智能搜索\n内容由 AI 生成，请仔细甄别"
+    },
+    {
+      "edit": ".slice().reverse()",
+      "messagesRequests": [
+        "POST"
+      ],
+      "nativeToReversed": "undefined",
+      "state": {
+        "status": "done",
+        "error": null,
+        "blocks": [
+          "FIXTURE_OK"
+        ]
+      },
+      "visibleText": "API 使用 demo\n开启新对话\n今天\nProbe\n设置\nProbe\nSynthetic test.\n\nFIXTURE_OK\n\n深度思考\n智能搜索\n内容由 AI 生成，请仔细甄别"
+    }
+  ]
+}

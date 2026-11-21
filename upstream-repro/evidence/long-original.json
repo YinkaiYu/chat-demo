@@ -1,0 +1,57 @@
+{
+  "build": "baseline",
+  "asset": "main.4fc5bb07.js",
+  "assetSHA256": "c4c9fb2a55c452bb4b31780df5c2d565c2583312b39a2876ea171755ed112855",
+  "pdfSHA256": "0b9bc9ef86cc212244adb000343e983f5b83e3f669fe6c6178e98485f570cc68",
+  "filesRoute": "/anthropic/v1/files",
+  "messagesRoute": "/anthropic/v1/messages",
+  "results": [
+    {
+      "case": "dense",
+      "events": [
+        {
+          "stage": "first",
+          "endpoint": "files",
+          "status": 200
+        },
+        {
+          "stage": "first",
+          "endpoint": "messages",
+          "status": 400,
+          "fields": [
+            "messages",
+            "model",
+            "safety_check",
+            "stream",
+            "system",
+            "thinking",
+            "title",
+            "tools"
+          ],
+          "roles": [
+            "latest_reminder",
+            "user"
+          ],
+          "messagesHash": "5fc73920cae97de06235374b1ec97f2ce1deddaaea9690a2757d6e551c852995",
+          "referenceHashes": [
+            "a9b30b69f21911cbc53db24d293cc7e16baae76ba036e53604f1ec19ea83080b"
+          ],
+          "sharedBodyHash": "196900a4193bc2c52f85b11f5cbff783c9c042bc1055c982efbed8e8f26269fe",
+          "title": {
+            "enabled": true
+          },
+          "safety": {
+            "level": "high"
+          },
+          "toolCount": 1,
+          "upstreamError": "user input too long, 63941 tokens exceeds max 32768 tokens"
+        }
+      ],
+      "assets": [
+        "main.4fc5bb07.js"
+      ],
+      "uiShowedLengthError": true,
+      "passed": true
+    }
+  ]
+}

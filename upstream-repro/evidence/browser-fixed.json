@@ -1,0 +1,97 @@
+{
+  "commit": "ba6d1ec3bc4dea28511d50de741c728c156ba558",
+  "mainAsset": "main.f857d4c5.js",
+  "mainAssetSha256": "54935e770bb9063c5b92d7f544881a97de81099faac50e2d107fb3c633f28db6",
+  "fixtureBytes": 1388,
+  "fixtureSha256": "7fa2bf6d7bc6a1312daccdf31fb2a5a8602d2273f5d88eb7b5f913a89e80b9cc",
+  "cases": {
+    "Chromium109": {
+      "version": "109.0.5414.46",
+      "zipImport": {
+        "engine": "109.0.5414.46",
+        "toSorted": "undefined",
+        "pageMessage": "已导入 1 个对话",
+        "afterReload": [
+          {
+            "title": "Synthetic upgrade check",
+            "root": "1",
+            "links": [
+              [
+                "user",
+                "1",
+                null,
+                "2"
+              ],
+              [
+                "assistant",
+                "2",
+                "1",
+                null
+              ]
+            ]
+          }
+        ],
+        "runtimeEdits": []
+      },
+      "shortSend": {
+        "edit": null,
+        "messagesRequests": [
+          "POST"
+        ],
+        "nativeToReversed": "undefined",
+        "state": {
+          "status": "done",
+          "error": null,
+          "blocks": [
+            "FIXTURE_OK"
+          ]
+        },
+        "visibleText": "API 使用 demo\n开启新对话\n今天\nProbe\n设置\nProbe\nSynthetic test.\n\nFIXTURE_OK\n\n深度思考\n智能搜索\n内容由 AI 生成，请仔细甄别"
+      }
+    },
+    "Edge": {
+      "version": "157.0.4341.60",
+      "zipImport": {
+        "engine": "157.0.4341.60",
+        "toSorted": "function",
+        "pageMessage": "已导入 1 个对话",
+        "afterReload": [
+          {
+            "title": "Synthetic upgrade check",
+            "root": "1",
+            "links": [
+              [
+                "user",
+                "1",
+                null,
+                "2"
+              ],
+              [
+                "assistant",
+                "2",
+                "1",
+                null
+              ]
+            ]
+          }
+        ],
+        "runtimeEdits": []
+      },
+      "shortSend": {
+        "edit": null,
+        "messagesRequests": [
+          "POST"
+        ],
+        "nativeToReversed": "function",
+        "state": {
+          "status": "done",
+          "error": null,
+          "blocks": [
+            "FIXTURE_OK"
+          ]
+        },
+        "visibleText": "API 使用 demo\n开启新对话\n今天\nProbe\n设置\nProbe\nSynthetic test.\n\nFIXTURE_OK\n\n深度思考\n智能搜索\n内容由 AI 生成，请仔细甄别"
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "build": "candidate",
+  "asset": "main.3f77b4eb.js",
+  "assetSHA256": "2300db6b624052e2433858eee494392c494bf072e3ecb712105d63978b3c9f50",
+  "pdfSHA256": "0b9bc9ef86cc212244adb000343e983f5b83e3f669fe6c6178e98485f570cc68",
+  "filesRoute": "/anthropic/v1/files",
+  "messagesRoute": "/anthropic/v1/messages",
+  "results": [
+    {
+      "case": "dense",
+      "events": [
+        {
+          "stage": "first",
+          "endpoint": "files",
+          "status": 502
+        }
+      ],
+      "assets": [
+        "main.3f77b4eb.js"
+      ],
+      "passed": false,
+      "driverError": "Locator.wait_for: Timeout 90000ms exceeded.\nCall log:\n  - waiting for locator(\"button[aria-label=\\\"发送\\\"][aria-disabled=\\\"false\\\"],button[aria-label=\\\"Send\\\"][aria-disabled=\\\"false\\\"]\").first to be visible\n",
+      "visibleText": "API 使用 demo\n开启新对话\n设置\n今天有什么可以帮到你？\ndsh-dense-probe.pdf\n服务器繁忙\n深度思考\n智能搜索"
+    }
+  ]
+}

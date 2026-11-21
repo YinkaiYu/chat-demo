@@ -1,0 +1,179 @@
+{
+  "build": "candidate",
+  "asset": "main.3f77b4eb.js",
+  "assetSHA256": "2300db6b624052e2433858eee494392c494bf072e3ecb712105d63978b3c9f50",
+  "pdfSHA256": "0b9bc9ef86cc212244adb000343e983f5b83e3f669fe6c6178e98485f570cc68",
+  "filesRoute": "/anthropic/v1/files",
+  "messagesRoute": "/anthropic/v1/messages",
+  "results": [
+    {
+      "case": "dense",
+      "events": [
+        {
+          "stage": "first",
+          "endpoint": "files",
+          "status": 200
+        },
+        {
+          "stage": "first",
+          "endpoint": "messages",
+          "status": 400,
+          "fields": [
+            "messages",
+            "model",
+            "safety_check",
+            "stream",
+            "system",
+            "thinking",
+            "title",
+            "tools"
+          ],
+          "roles": [
+            "latest_reminder",
+            "user"
+          ],
+          "messagesHash": "ed637e11c37b3f7cd698b601b67498463756b72892d54e19422b8c4c6efb7aa0",
+          "referenceHashes": [
+            "b461113a6ed222fc65f55e8795a4756241151c6058a06adafaea823b2c8ff92c"
+          ],
+          "sharedBodyHash": "a60d70209e7f0f5b9ceac9238519e7078a4b65e5e4104be21b78556c49706886",
+          "title": {
+            "enabled": true
+          },
+          "safety": {
+            "level": "high"
+          },
+          "toolCount": 1,
+          "upstreamError": "user input too long, 63947 tokens exceeds max 32768 tokens"
+        },
+        {
+          "stage": "first",
+          "endpoint": "messages",
+          "status": 200,
+          "fields": [
+            "messages",
+            "model",
+            "stream",
+            "system",
+            "thinking"
+          ],
+          "roles": [
+            "latest_reminder",
+            "user"
+          ],
+          "messagesHash": "ed637e11c37b3f7cd698b601b67498463756b72892d54e19422b8c4c6efb7aa0",
+          "referenceHashes": [
+            "b461113a6ed222fc65f55e8795a4756241151c6058a06adafaea823b2c8ff92c"
+          ],
+          "sharedBodyHash": "a60d70209e7f0f5b9ceac9238519e7078a4b65e5e4104be21b78556c49706886",
+          "title": null,
+          "safety": null,
+          "toolCount": 0
+        },
+        {
+          "stage": "first",
+          "endpoint": "messages",
+          "status": 200,
+          "fields": [
+            "messages",
+            "model",
+            "safety_check",
+            "stream",
+            "system",
+            "thinking",
+            "title"
+          ],
+          "roles": [
+            "user",
+            "assistant"
+          ],
+          "messagesHash": "41601094a27008cd97556b4beeece3c63c16ce111d9190d497a426ee24763474",
+          "referenceHashes": [],
+          "sharedBodyHash": "83e1f7078215fd36e512490c33c8e65082b340313ae4aa5132489e1c18b2e21c",
+          "title": {
+            "enabled": true
+          },
+          "safety": {
+            "level": "high"
+          },
+          "toolCount": 0
+        },
+        {
+          "stage": "followup",
+          "endpoint": "messages",
+          "status": 200,
+          "fields": [
+            "messages",
+            "model",
+            "safety_check",
+            "stream",
+            "system",
+            "thinking",
+            "tools"
+          ],
+          "roles": [
+            "latest_reminder",
+            "user",
+            "assistant",
+            "user"
+          ],
+          "messagesHash": "93b5b1416c1db205a6d864ec5a7d132d3eb1db406d14bc78dbd07133b1de82d2",
+          "referenceHashes": [
+            "b461113a6ed222fc65f55e8795a4756241151c6058a06adafaea823b2c8ff92c"
+          ],
+          "sharedBodyHash": "e9d8651a688d4dda7306bbbd89d68baa783aad416ef28e166a37253e8186c41d",
+          "title": null,
+          "safety": {
+            "level": "high"
+          },
+          "toolCount": 1
+        }
+      ],
+      "assets": [
+        "main.3f77b4eb.js"
+      ],
+      "answer": "119932668",
+      "saved": {
+        "titles": [
+          "查询附件页码数字"
+        ],
+        "summaries": [
+          "查询附件页码数字"
+        ],
+        "messages": [
+          2
+        ]
+      },
+      "reopenedAnswer": "119932668",
+      "reopened": {
+        "titles": [
+          "查询附件页码数字"
+        ],
+        "summaries": [
+          "查询附件页码数字"
+        ],
+        "messages": [
+          2
+        ]
+      },
+      "titleVisibleAfterReload": true,
+      "passed": true,
+      "followup": "521154191",
+      "sameMessagesOnRetry": true,
+      "onlyExtensionFieldsRemoved": true,
+      "sameFileAcrossReload": true,
+      "oneUpload": true,
+      "savedFollowup": {
+        "titles": [
+          "查询附件页码数字"
+        ],
+        "summaries": [
+          "查询附件页码数字"
+        ],
+        "messages": [
+          4
+        ]
+      }
+    }
+  ]
+}
