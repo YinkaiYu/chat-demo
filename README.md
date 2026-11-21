@@ -57,7 +57,7 @@ Settings → Data → Delete all chats clears all local conversations, original 
 
 Chat uses `deepseek-flash` by default through Anthropic-compatible Messages / Files APIs. Speech features use ASR / TTS endpoints. Requests include extensions for search, link reading, titles, and `latest_reminder`, so the configured service must support the corresponding capabilities. Supported attachment formats are determined by server-side validation.
 
-If an extended-mode Messages request is rejected for exceeding the 32,768-token input limit, the demo retries the same messages and file references once in standard mode. The retry omits web search, link reading, and the high safety check; it uses the API's default content check. A separate short request generates the title from excerpts of the question and answer.
+Requests that include `safety_check`, `title`, or `tools` are limited to 32,768 input tokens. If such a request is rejected for exceeding that limit, the demo retries the same messages and file references once without those fields; the retry uses the API's default content check and does not enable web search or link reading. The title is generated separately from a short excerpt of the question and answer.
 
 ```text
 src/
